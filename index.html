@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForumSent</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+    <header>
+        <nav class="navbar">
+            <a href="#" class="nav-item active" onclick="switchTab('home-page', this); return false;">
+                <img src="https://cdn-icons-png.flaticon.com/512/25/25694.png" alt="" class="nav-icon">
+                <span>Home</span>
+            </a>
+
+            <button type="button" class="nav-item-btn" onclick="openModal()">
+                <img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="" class="nav-icon">
+                <span>Add post</span>
+            </button>
+
+            <a href="#" class="nav-item" onclick="switchTab('community-page', this); return false;">
+                <img src="https://cdn-icons-png.flaticon.com/512/681/681494.png" alt="" class="nav-icon">
+                <span>Community</span>
+            </a>
+
+            <div class="profile-nav-btn" onclick="openProfileModal()">
+                <img id="navUserAvatar" src="https://i.pravatar.cc/100?img=68" alt="Avatar" class="avatar-small">
+                <span id="navUserDisplayName">Гость</span>
+            </div>
+
+            <div class="search-container">
+                <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" alt="" class="search-icon">
+                <input type="text" id="postSearchInput" placeholder="search posts...">
+            </div>
+        </nav>
+    </header>
+
+    <main class="content-container">
+        <section id="home-page" class="page-section active">
+            <h2>Лента публикаций</h2>
+            <div class="posts-feed" id="postsFeed"></div>
+        </section>
+
+        <section id="community-page" class="page-section">
+            <h2>Популярные сообщества (100 игр и тем)</h2>
+            <div class="communities-grid" id="communitiesGrid"></div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p>&copy; 2026 ForumSent. Все права защищены.</p>
+            <div class="footer-links">
+                <a href="#">О нас</a>
+                <a href="#">Правила</a>
+                <a href="#">Поддержка</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="postModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Создать новый пост</h3>
+                <button type="button" class="close-modal-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="createPostForm" onsubmit="handleCreatePost(event)">
+                <div class="form-group">
+                    <label for="post-title">Заголовок</label>
+                    <input type="text" id="post-title" placeholder="О чем хотите рассказать?" required>
+                </div>
+                <div class="form-group">
+                    <label for="post-community">Выберите сообщество</label>
+                    <select id="post-community"></select>
+                </div>
+                <div class="form-group">
+                    <label for="post-text">Текст публикации</label>
+                    <textarea id="post-text" rows="4" placeholder="Напишите ваш текст здесь..." required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Опубликовать</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Настройки профиля</h3>
+                <button type="button" class="close-modal-btn" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <form id="profileForm" onsubmit="handleSaveProfile(event)">
+                <div class="form-group">
+                    <label for="usernameInput">Юзернейм (например: @alex)</label>
+                    <input type="text" id="usernameInput" placeholder="username" required>
+                    <span id="usernameError" class="error-text"></span>
+                </div>
+                <div class="form-group">
+                    <label for="displayNameInput">Отображаемое имя</label>
+                    <input type="text" id="displayNameInput" placeholder="Как вас звать?" required>
+                </div>
+                <div class="form-group">
+                    <label for="avatarFileInput">Загрузить аватарку с устройства</label>
+                    <input type="file" id="avatarFileInput" accept="image/*">
+                </div>
+                <button type="submit" class="submit-btn">Сохранить профиль</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="commentsModal" class="modal-overlay">
+        <div class="modal-content comments-modal-content">
+            <div class="modal-header">
+                <h3>Комментарии</h3>
+                <button type="button" class="close-modal-btn" onclick="closeCommentsModal()">&times;</button>
+            </div>
+            <div class="comments-list" id="commentsList"></div>
+            <form id="addCommentForm" onsubmit="handleAddComment(event)" class="comment-form">
+                <input type="text" id="commentInput" placeholder="Написать комментарий..." required>
+                <button type="submit" class="submit-comment-btn">Отправить</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const communitiesData = [
+            { id: "c/zomboid", name: "c/zomboid", desc: "Выживание в суровом мире Project Zomboid, моды и советы.", members: "15.4k" },
+            { id: "c/steam", name: "c/steam", desc: "Обсуждение релизов, распродаж и игрового опыта в Steam.", members: "34.2k" },
+            { id: "c/minecraft", name: "c/minecraft", desc: "Постройки, редстоун схемы и приключения в кубическом мире.", members: "52.8k" },
+            { id: "c/roblox", name: "c/roblox", desc: "Лучшие режимы, кастомизация и разработка на Lua.", members: "28.9k" },
+            { id: "c/indiedev", name: "c/indiedev", desc: "Создание независимых игр, геймдизайн и творческие идеи.", members: "9.6k" },
+            { id: "c/webdev", name: "c/webdev", desc: "Все о веб-разработке, HTML, CSS и JavaScript.", members: "12.5k" },
+            { id: "c/design", name: "c/design", desc: "Тренды UI/UX дизайна, шрифты и вдохновение.", members: "8.1k" },
+            { id: "c/gta6", name: "c/gta6", desc: "Ожидание, сливы, теории и новости о Grand Theft Auto VI.", members: "88.1k" },
+            { id: "c/counterstrike", name: "c/counterstrike", desc: "Тактики, киберспорт, скины и обсуждение CS2.", members: "64.3k" },
+            { id: "c/dota2", name: "c/dota2", desc: "Мета патчей, киберспорт, герои и катки в Доте.", members: "45.0k" },
+            { id: "c/cyberpunk", name: "c/cyberpunk", desc: "Найт-Сити, импланты, билды и атмосфера будущего.", members: "29.4k" },
+            { id: "c/eldenring", name: "c/eldenring", desc: "Прохождение, лор, билды для выживания в Междуземье.", members: "41.7k" },
+            { id: "c/valheim", name: "c/valheim", desc: "Викинги, строительство кораблей и базы в суровом мире.", members: "18.3k" },
+            { id: "c/terraria", name: "c/terraria", desc: "Крафт, боссы, грандиозные постройки в 2D песочнице.", members: "31.0k" },
+            { id: "c/skyrim", name: "c/skyrim", desc: "Модификации, гильдии и бесконечные приключения в Скайриме.", members: "39.5k" },
+            { id: "c/witcher3", name: "c/witcher3", desc: "Ведьмачьи заказы, сюжет и монстры Континента.", members: "27.2k" },
+            { id: "c/fortnite", name: "c/fortnite", desc: "Королевская битва, ивенты, новые сезоны и скины.", members: "55.6k" },
+            { id: "c/valorant", name: "c/valorant", desc: "Эло, агенты, раскидки и киберспортивные турниры.", members: "38.4k" },
+            { id: "c/leagueoflegends", name: "c/leagueoflegends", desc: "Упьется ультимейтами Ущелье Призывателей.", members: "61.0k" },
+            { id: "c/apexlegends", name: "c/apexlegends", desc: "Динамичные перестрелки и легенды королевской битвы.", members: "22.8k" },
+            { id: "c/rust", name: "c/rust", desc: "Рейды, выживание, постройка баз и жесткий PvP.", members: "26.4k" },
+            { id: "c/ark", name: "c/ark", desc: "Приручение динозавров и выживание на первобытных островах.", members: "19.1k" },
+            { id: "c/palworld", name: "c/palworld", desc: "Выживание с Палами, крафт и автоматизация базы.", members: "21.5k" },
+            { id: "c/hollowknight", name: "c/hollowknight", desc: "Мрачный подземный мир Халлоунеста и лор.", members: "16.8k" },
+            { id: "c/genshinimpact", name: "c/genshinimpact", desc: "Тейват, молитвы, билды персонажей и ивенты.", members: "44.9k" },
+            { id: "c/honkaistarrail", name: "c/honkaistarrail", desc: "Путешествия на Звездном Экспрессе по мирам.", members: "25.1k" },
+            { id: "c/zelda", name: "c/zelda", desc: "Исследования Хайрула и загадки святилищ.", members: "30.3k" },
+            { id: "c/balursgate3", name: "c/balursgate3", desc: "Приключения в Забытых Королевствах и компаньоны.", members: "58.2k" },
+            { id: "c/residentevil", name: "c/residentevil", desc: "Ужасы Umbrella, зомби и выживание.", members: "17.4k" },
+            { id: "c/silenthill", name: "c/silenthill", desc: "Туманный город и психологические кошмары.", members: "11.2k" },
+            { id: "c/darksouls", name: "c/darksouls", desc: "Костер, сложность и преодоление боли.", members: "24.6k" },
+            { id: "c/monsterhunter", name: "c/monsterhunter", desc: "Охота на гигантских чудовищ и крафт экипировки.", members: "20.9k" },
+            { id: "c/subnautica", name: "c/subnautica", desc: "Исследования инопланетного океана и страх глубин.", members: "18.7k" },
+            { id: "c/satisfactory", name: "c/satisfactory", desc: "Автоматизация заводов и логистика на чужой планете.", members: "15.9k" },
+            { id: "c/factorio", name: "c/factorio", desc: "Фабрика должна расти! Оптимизация и защита от жуков.", members: "22.3k" },
+            { id: "c/rimworld", name: "c/rimworld", desc: "Симулятор колонии, истории выживших и безумие.", members: "23.4k" },
+            { id: "c/citiesskylines", name: "c/citiesskylines", desc: "Градостроительство, пробки и мегаполисы.", members: "16.2k" },
+            { id: "c/sims", name: "c/sims", desc: "Жизнь виртуальных человечков, моды и строительство домов.", members: "29.8k" },
+            { id: "c/portal", name: "c/portal", desc: "Тесты с порталами, торты и сарказм GLaDOS.", members: "14.1k" },
+            { id: "c/halflife", name: "c/halflife", desc: "Гордон Фримен, монтировка и борьба с Альянсом.", members: "19.5k" },
+            { id: "c/doom", name: "c/doom", desc: "Демоны, тяжелый металл и яростный шутерный экшен.", members: "21.8k" },
+            { id: "c/deadcells", name: "c/deadcells", desc: "Динамичный рогалик-метроидвания.", members: "10.4k" },
+            { id: "c/hades", name: "c/hades", desc: "Побег из подземного царства Аида.", members: "18.0k" },
+            { id: "c/slaythespire", name: "c/slaythespire", desc: "Карточные колоды и подземелья.", members: "12.7k" },
+            { id: "c/amongus", name: "c/amongus", desc: "Кто же здесь предатель? Обман и дедукция.", members: "15.0k" },
+            { id: "c/fallout", name: "c/fallout", desc: "Пустоши, ядерный апокалипсис и крышки.", members: "33.6k" },
+            { id: "c/masseffect", name: "c/masseffect", desc: "Команда «Нормандии» и спасение галактики от Жнецов.", members: "26.9k" },
+            { id: "c/assassinscreed", name: "c/assassinscreed", desc: "История, тамплиеры и скрытые клинки.", members: "37.1k" },
+            { id: "c/farcry", name: "c/farcry", desc: "Экзотические уголки мира и безумные злодеи.", members: "18.4k" },
+            { id: "c/battlefield", name: "c/battlefield", desc: "Масштабные сетевые баталии и разрушаемость.", members: "20.2k" },
+            { id: "c/cod", name: "c/cod", desc: "Динамичные перестрелки и сюжетные кампании Call of Duty.", members: "48.3k" },
+            { id: "c/gran-turismo", name: "c/gran-turismo", desc: "Автомобильный симулятор и гоночный трек.", members: "9.9k" },
+            { id: "c/forza", name: "c/forza", desc: "Открытый мир, фестивали и тюнинг тачек.", members: "22.1k" },
+            { id: "c/needforspeed", name: "c/needforspeed", desc: "Уличные гонки, полиция и кастомизация.", members: "17.6k" },
+            { id: "c/rocketleague", name: "c/rocketleague", desc: "Футбол на реактивных машинах.", members: "24.2k" },
+            { id: "c/fc26", name: "c/fc26", desc: "Футбольные матчи, Ultimate Team и тактики.", members: "31.4k" },
+            { id: "c/nba2k", name: "c/nba2k", desc: "Баскетбольные баталии на виртуальном паркете.", members: "11.5k" },
+            { id: "c/wwe", name: "c/wwe", desc: "Реслинг, шоу и эпичные поединки на ринге.", members: "8.7k" },
+            { id: "c/tekken", name: "c/tekken", desc: "Турниры Железного Кулака и файтинги.", members: "13.2k" },
+            { id: "c/streetfighter", name: "c/streetfighter", desc: "Легендарные уличные бои.", members: "10.1k" },
+            { id: "c/mortalcombat", name: "c/mortalcombat", desc: "Фаталити, бруталити и турниры миров.", members: "35.8k" },
+            { id: "c/detroit", name: "c/detroit", desc: "Интерактивное кино, андроиды и моральные выборы.", members: "16.4k" },
+            { id: "c/heavyrain", name: "c/heavyrain", desc: "Детективная история в поисках Мастера Оригами.", members: "7.8k" },
+            { id: "c/alanwake", name: "c/alanwake", desc: "Мистика, свет фонарика и мрачные рукописи.", members: "14.3k" },
+            { id: "c/control", name: "c/control", desc: "Бюро паранормальных исследований и телекинез.", members: "12.0k" },
+            { id: "c/deathstranding", name: "c/deathstranding", desc: "Доставка грузов через разрушенный постапокалиптический мир.", members: "19.8k" },
+            { id: "c/metalgearsolid", name: "c/metalgearsolid", desc: "Скрытные операции и шпионские интриги.", members: "15.1k" },
+            { id: "c/devilmaycry", name: "c/devilmaycry", desc: "Стильные комбо, демоны и охотники.", members: "13.7k" },
+            { id: "c/bayonetta", name: "c/bayonetta", desc: "Энергичный экшен и ведьмовские магии.", members: "8.3k" },
+            { id: "c/nier", name: "c/nier", desc: "Философские андроиды и потрясающий саундтрек.", members: "16.9k" },
+            { id: "c/finalfantasy", name: "c/finalfantasy", desc: "Эпичные японские ролевые игры.", members: "28.4k" },
+            { id: "c/persona", name: "c/persona", desc: "Школьная жизнь, тени и пошаговые битвы.", members: "17.2k" },
+            { id: "c/monolith", name: "c/monolith", desc: "Инди-проекты и необычные концепты.", members: "6.5k" },
+            { id: "c/vrchat", name: "c/vrchat", desc: "Виртуальная реальность, аватары и общение без границ.", members: "21.3k" },
+            { id: "c/beatsaber", name: "c/vr-rhythm", desc: "Нарезание блоков световыми мечами под музыку.", members: "11.1k" },
+            { id: "c/halflifealyx", name: "c/vr-games", desc: "Виртуальные приключения в мире Half-Life.", members: "9.4k" },
+            { id: "c/ETS2", name: "c/truckers", desc: "Дальнобойщики, фуры и спокойные поездки по Европе.", members: "18.2k" },
+            { id: "c/snowrunner", name: "c/snowrunner", desc: "Бездорожье, грязь, болота и тяжелые грузовики.", members: "16.7k" },
+            { id: "c/farming", name: "c/farming", desc: "Сельское хозяйство, тракторы и фермерский бизнес.", members: "14.8k" },
+            { id: "c/strategy", name: "c/strategy", desc: "Глобальные стратегии, тактика и экономика.", members: "12.6k" },
+            { id: "c/rts", name: "c/rts", desc: "Классические стратегии в реальном времени.", members: "10.3k" },
+            { id: "c/civ6", name: "c/civ6", desc: "«Еще один ход и спать» — развитие цивилизаций.", members: "20.5k" },
+            { id: "c/stellaris", name: "c/stellaris", desc: "Космическая 4X-стратегия и ксеноцид.", members: "19.2k" },
+            { id: "c/hoi4", name: "c/hoi4", desc: "Вторая мировая война в деталях и альтернативная история.", members: "23.9k" },
+            { id: "c/eu4", name: "c/eu4", desc: "Правление государством в эпоху великих географических открытий.", members: "17.4k" },
+            { id: "c/totalwar", name: "c/totalwar", desc: "Эпичные масштабные сражения и пошаговая карта.", members: "16.1k" },
+            { id: "c/xcom", name: "c/xcom", desc: "Тактические бои против инопланетной угрозы.", members: "11.8k" },
+            { id: "c/diablo4", name: "c/diablo4", desc: "Мрачное подземелье, лут и борьба с Лилит.", members: "27.5k" },
+            { id: "c/pathofexile", name: "c/pathofexile", desc: "Огромное дерево пассивных навыков и гринд.", members: "24.1k" },
+            { id: "c/torchlight", name: "c/torchlight", desc: "Яркие приключения и питомцы-помощники.", members: "7.2k" },
+            { id: "c/lostark", name: "c/lostark", desc: "Корейская MMO-RPG с динамичным экшеном.", members: "15.3k" },
+            { id: "c/wow", name: "c/wow", desc: "Азерот, Орда, Альянс и рейды в World of Warcraft.", members: "42.6k" },
+            { id: "c/ff14", name: "c/ff14", desc: "ММО-путешествия по миру Эорзеи.", members: "19.9k" },
+            { id: "c/guildwars2", name: "c/guildwars2", desc: "Динамичные события и исследование мира Тирии.", members: "12.4k" },
+            { id: "c/destiny2", name: "c/destiny2", desc: "Космические стражи, рейды и лут-шутер.", members: "28.7k" },
+            { id: "c/warframe", name: "c/warframe", desc: "Ниндзя в космосе и биомеханические костюмы.", members: "33.2k" },
+            { id: "c/bravestars", name: "c/mobilegames", desc: "Мобильные игры, порты и шутеры на телефоны.", members: "21.0k" },
+            { id: "c/brawlstars", name: "c/brawlstars", desc: "Динамичные бои 3 на 3 на мобильных.", members: "36.5k" },
+            { id: "c/clashroyale", name: "c/clashroyale", desc: "Карточные башни и тактические сражения.", members: "25.8k" },
+            { id: "c/general", name: "c/general", desc: "Общие темы, беседы обо всем на свете и отдых.", members: "40.0k" }
+        ];
+
+        let currentUser = JSON.parse(localStorage.getItem('forum_user')) || {
+            username: 'user_' + Math.floor(Math.random() * 1000),
+            displayName: 'Новый участник',
+            avatar: 'https://i.pravatar.cc/100?img=68'
+        };
+
+        let currentPostId = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateProfileUI();
+            renderCommunities();
+            populateCommunitySelect();
+            renderPosts();
+
+            const searchInput = document.getElementById('postSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    renderPosts(query);
+                    if (query.length > 0) {
+                        switchTab('home-page', document.querySelector('.nav-item'));
+                    }
+                });
+            }
+
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'forum_posts' || event.key === 'forum_user') {
+                    if (event.key === 'forum_user') {
+                        currentUser = JSON.parse(event.newValue);
+                        updateProfileUI();
+                    }
+                    if (event.key === 'forum_posts') {
+                        const query = document.getElementById('postSearchInput') ? document.getElementById('postSearchInput').value.toLowerCase().trim() : '';
+                        renderPosts(query);
+                    }
+                }
+            });
+        });
+
+        function renderCommunities() {
+            const grid = document.getElementById('communitiesGrid');
+            grid.innerHTML = communitiesData.map(comm => `
+                <div class="community-card">
+                    <h3>${escapeHtml(comm.name)}</h3>
+                    <p>${escapeHtml(comm.desc)}</p>
+                    <span class="members-count">${comm.members} участников</span>
+                    <button class="join-btn" onclick="toggleJoin(this)">Вступить</button>
+                </div>
+            `).join('');
+        }
+
+        function populateCommunitySelect() {
+            const select = document.getElementById('post-community');
+            select.innerHTML = communitiesData.map(comm => `
+                <option value="${comm.name}">${comm.name}</option>
+            `).join('');
+        }
+
+        function toggleJoin(btn) {
+            if (btn.textContent === "Вступить") {
+                btn.textContent = "Вы участник";
+                btn.style.background = "#333";
+                btn.style.color = "#fff";
+            } else {
+                btn.textContent = "Вступить";
+                btn.style.background = "transparent";
+                btn.style.color = "#333";
+            }
+        }
+
+        function updateProfileUI() {
+            document.getElementById('navUserAvatar').src = currentUser.avatar;
+            document.getElementById('navUserDisplayName').textContent = currentUser.displayName;
+        }
+
+        function openProfileModal() {
+            document.getElementById('usernameInput').value = currentUser.username;
+            document.getElementById('displayNameInput').value = currentUser.displayName;
+            document.getElementById('usernameError').textContent = '';
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function handleSaveProfile(event) {
+            event.preventDefault();
+            const newUsername = document.getElementById('usernameInput').value.trim();
+            const newDisplayName = document.getElementById('displayNameInput').value.trim();
+            const fileInput = document.getElementById('avatarFileInput');
+            const errorSpan = document.getElementById('usernameError');
+
+            let takenUsernames = JSON.parse(localStorage.getItem('forum_taken_usernames')) || ['admin', 'moderator', 'root'];
+            
+            if (newUsername !== currentUser.username && takenUsernames.includes(newUsername)) {
+                errorSpan.textContent = 'Этот юзернейм уже занят!';
+                return;
+            }
+
+            takenUsernames = takenUsernames.filter(u => u !== currentUser.username);
+            takenUsernames.push(newUsername);
+            localStorage.setItem('forum_taken_usernames', JSON.stringify(takenUsernames));
+
+            const saveUserData = (avatarUrl) => {
+                currentUser = {
+                    username: newUsername,
+                    displayName: newDisplayName,
+                    avatar: avatarUrl || currentUser.avatar
+                };
+                localStorage.setItem('forum_user', JSON.stringify(currentUser));
+                updateProfileUI();
+                closeProfileModal();
+                renderPosts();
+            };
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) { saveUserData(e.target.result); };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                saveUserData(currentUser.avatar);
+            }
+        }
+
+        function switchTab(pageId, element) {
+            const sections = document.querySelectorAll('.page-section');
+            sections.forEach(section => section.classList.remove('active'));
+
+            const navItems = document.querySelectorAll('.navbar > a.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+
+            const targetSection = document.getElementById(pageId);
+            if (targetSection) targetSection.classList.add('active');
+
+            if (element && element.classList.contains('nav-item')) {
+                element.classList.add('active');
+            }
+        }
+
+        function openModal() { document.getElementById('postModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('postModal').style.display = 'none'; }
+
+        function renderPosts(searchQuery = '') {
+            const postsFeed = document.getElementById('postsFeed');
+            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
+
+            const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            
+            const validPosts = posts.filter(post => {
+                if (!post.timestamp) return true;
+                return (now - post.timestamp) < thirtyDaysMs;
+            });
+
+            if (validPosts.length !== posts.length) {
+                posts = validPosts;
+                localStorage.setItem('forum_posts', JSON.stringify(posts));
+            }
+
+            if (searchQuery) {
+                posts = posts.filter(post => 
+                    post.title.toLowerCase().includes(searchQuery) || 
+                    post.text.toLowerCase().includes(searchQuery) ||
+                    post.authorName.toLowerCase().includes(searchQuery) ||
+                    post.authorUsername.toLowerCase().includes(searchQuery) ||
+                    post.community.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            if (posts.length === 0) {
+                postsFeed.innerHTML = '<p class="no-posts" style="color: #777; grid-column: span 2; text-align: center;">Ничего не найдено</p>';
+                return;
+            }
+
+            postsFeed.innerHTML = posts.map(post => {
+                const isMyPost = post.authorUsername === currentUser.username;
+
+                return `
+                    <article class="post-card" data-id="${post.id}">
+                        <div class="post-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <img src="${post.authorAvatar}" alt="Avatar" class="avatar">
+                                <div>
+                                    <h4 class="post-author">${escapeHtml(post.authorName)} <span class="username-tag">@${escapeHtml(post.authorUsername)}</span></h4>
+                                    <span class="post-time">${post.time} · ${post.community}</span>
+                                </div>
+                            </div>
+                            ${isMyPost ? `<button type="button" onclick="deletePost('${post.id}')" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 14px;" title="Удалить пост">🗑️ Удалить</button>` : ''}
+                        </div>
+                        <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                        <div class="post-content" id="content_${post.id}">
+                            <p>${escapeHtml(post.text)}</p>
+                        </div>
+                        <button type="button" class="toggle-text-btn" id="btn_${post.id}" onclick="togglePostText('${post.id}')" style="display: none;">Развернуть</button>
+                        <div class="post-footer">
+                            <button type="button" class="action-btn like-btn ${post.isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
+                                <img src="likeicon.png" alt="Like" class="btn-icon">
+                                <span class="like-count">${post.likes}</span>
+                            </button>
+                            <button type="button" class="action-btn comment-btn" onclick="openComments('${post.id}')">
+                                <img src="chat.png" alt="Comments" class="btn-icon">
+                                <span class="comment-count">${post.comments.length} ${getCommentWord(post.comments.length)}</span>
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            setTimeout(() => {
+                posts.forEach(post => {
+                    const contentDiv = document.getElementById(`content_${post.id}`);
+                    const btn = document.getElementById(`btn_${post.id}`);
+                    if (contentDiv && btn) {
+                        if (contentDiv.scrollHeight > 120) {
+                            btn.style.display = 'inline-block';
+                        }
+                    }
+                });
+            }, 0);
+        }
+
+        function togglePostText(postId) {
+            const contentDiv = document.getElementById(`content_${postId}`);
+            const btn = document.getElementById(`btn_${postId}`);
+            if (contentDiv && btn) {
+                contentDiv.classList.toggle('expanded');
+                if (contentDiv.classList.contains('expanded')) {
+                    btn.textContent = 'Свернуть';
+                } else {
+                    btn.textContent = 'Развернуть';
+                }
+            }
+        }
+
+        function deletePost(postId) {
+            if (!confirm('Вы уверены, что хотите удалить этот пост?')) return;
+            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
+            posts = posts.filter(post => post.id !== postId);
+            localStorage.setItem('forum_posts', JSON.stringify(posts));
+            const query = document.getElementById('postSearchInput').value.toLowerCase().trim();
+            renderPosts(query);
+        }
+
+        function handleCreatePost(event) {
+            event.preventDefault();
+            const titleInput = document.getElementById('post-title');
+            const communitySelect = document.getElementById('post-community');
+            const textInput = document.getElementById('post-text');
+
+            if (!titleInput || !textInput) return;
+
+            const newPost = {
+                id: 'post_' + Date.now(),
+                authorName: currentUser.displayName,
+                authorUsername: currentUser.username,
+                authorAvatar: currentUser.avatar,
+                community: communitySelect.value,
+                title: titleInput.value,
+                text: textInput.value,
+                time: 'Только что',
+                timestamp: Date.now(),
+                likes: 0,
+                isLiked: false,
+                comments: []
+            };
+
+            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
+            posts.unshift(newPost);
+            localStorage.setItem('forum_posts', JSON.stringify(posts));
+
+            document.getElementById('createPostForm').reset();
+            closeModal();
+            
+            const searchInput = document.getElementById('postSearchInput');
+            if (searchInput) searchInput.value = '';
+            renderPosts();
+            switchTab('home-page', document.querySelector('.nav-item'));
+        }
+
+        function toggleLike(postId) {
+            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
+            posts = posts.map(post => {
+                if (post.id === postId) {
+                    if (post.isLiked) {
+                        post.likes -= 1;
+                        post.isLiked = false;
+                    } else {
+                        post.likes += 1;
+                        post.isLiked = true;
+                    }
+                }
+                return post;
+            });
+            localStorage.setItem('forum_posts', JSON.stringify(posts));
+            const query = document.getElementById('postSearchInput').value.toLowerCase().trim();
+            renderPosts(query);
+        }
+
+        function openComments(postId) {
+            currentPostId = postId;
+            document.getElementById('commentsModal').style.display = 'flex';
+            renderComments();
+        }
+
+        function closeCommentsModal() {
+            document.getElementById('commentsModal').style.display = 'none';
+            currentPostId = null;
+        }
+
+        function renderComments() {
+            if (!currentPostId) return;
+            const posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
+            const post = posts.find(p => p.id === currentPostId);
+            const commentsList = document.getElementById('commentsList');
+
+            if (!post || post.comments.length === 0) {
+                commentsList.innerHTML = '<p class="no-comments">Пока нет комментариев. Будьте первыми!</p>';
+                return;
+            }
+
+            commentsList.innerHTML = post.comments.map(c => `
+                <div class="comment-item">
+                    <strong>${escapeHtml(c.author)}</strong>
+                    <p>${escapeHtml(c.text)}</p>
+                </div>
+            `).join('');
+        }
+
+        function handleAddComment(event) {
+            event.preventDefault();
+            if (!currentPostId) return;
+
+            const input = document.getElementById('commentInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
+            posts = posts.map(post => {
+                if (post.id === currentPostId) {
+                    post.comments.push({
+                        author: currentUser.displayName + ' (@' + currentUser.username + ')',
+                        text: text
+                    });
+                }
+                return post;
+            });
+
+            localStorage.setItem('forum_posts', JSON.stringify(posts));
+            input.value = '';
+            renderComments();
+            const query = document.getElementById('postSearchInput').value.toLowerCase().trim();
+            renderPosts(query);
+        }
+
+        function getCommentWord(num) {
+            if (num % 10 === 1 && num % 100 !== 11) return 'комментарий';
+            if ([2, 3, 4].includes(num % 10) && ![12, 13, 14].includes(num % 100)) return 'комментария';
+            return 'комментариев';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
