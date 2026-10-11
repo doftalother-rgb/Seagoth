@@ -511,27 +511,30 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .post-content {
-            max-height: 120px;
-            overflow: hidden;
-            position: relative;
-            transition: max-height 0.3s ease;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .post-content.expanded {
-            max-height: none;
-        }
-        .toggle-text-btn {
-            background: transparent;
-            border: none;
-            color: #0066ff;
-            cursor: pointer;
-            padding: 4px 0;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 5px;
-            display: inline-block;
-        }
-        .toggle-text-btn:hover {
-            text-decoration: underline;
-        }
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+    transition: max-height 0.3s ease;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+        
+.post-content.expanded {
+    max-height: none;
+}
+
+.toggle-text-btn {
+    background: transparent;
+    border: none;
+    color: #0066ff;
+    cursor: pointer;
+    padding: 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.toggle-text-btn:hover {
+    text-decoration: underline;
+}
