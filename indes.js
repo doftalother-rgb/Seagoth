@@ -29,7 +29,7 @@ function openModal() {
 function closeModal() {
     const modal = document.getElementById('postModal');
     if (modal) {
-        modal.style.display = 'none';
+        modal.style.display = 'none';  
     }
 }
 
