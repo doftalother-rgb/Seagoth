@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
-
 </head>
 <body> 
 
@@ -44,6 +43,7 @@
     <main class="content-container">
         <section id="home-page" class="page-section active">
             <h2>Лента публикаций</h2>
+            <!-- Сюда в реальном времени подгружаются посты из Firebase -->
             <div class="posts-feed" id="postsFeed"></div>
         </section>
 
@@ -64,6 +64,7 @@
         </div>
     </footer>
 
+    <!-- Модальное окно создания поста -->
     <div id="postModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -88,6 +89,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно профиля -->
     <div id="profileModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -113,20 +115,7 @@
         </div>
     </div>
 
-    <div id="commentsModal" class="modal-overlay">
-        <div class="modal-content comments-modal-content">
-            <div class="modal-header">
-                <h3>Комментарии</h3>
-                <button type="button" class="close-modal-btn" onclick="closeCommentsModal()">&times;</button>
-            </div>
-            <div class="comments-list" id="commentsList"></div>
-            <form id="addCommentForm" onsubmit="handleAddComment(event)" class="comment-form">
-                <input type="text" id="commentInput" placeholder="Написать комментарий..." required>
-                <button type="submit" class="submit-comment-btn">Отправить</button>
-            </form>
-        </div>
-    </div>
-
+    <!-- Обычный скрипт интерфейса сайта -->
     <script>
         const communitiesData = [
             { id: "c/zomboid", name: "c/zomboid", desc: "Выживание в суровом мире Project Zomboid, моды и советы.", members: "15.4k" },
@@ -237,41 +226,15 @@
             avatar: 'https://i.pravatar.cc/100?img=68'
         };
 
-        let currentPostId = null;
-
         window.addEventListener('DOMContentLoaded', () => {
             updateProfileUI();
             renderCommunities();
             populateCommunitySelect();
-            renderPosts();
-
-            const searchInput = document.getElementById('postSearchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const query = e.target.value.toLowerCase().trim();
-                    renderPosts(query);
-                    if (query.length > 0) {
-                        switchTab('home-page', document.querySelector('.nav-item'));
-                    }
-                });
-            }
-
-            window.addEventListener('storage', (event) => {
-                if (event.key === 'forum_posts' || event.key === 'forum_user') {
-                    if (event.key === 'forum_user') {
-                        currentUser = JSON.parse(event.newValue);
-                        updateProfileUI();
-                    }
-                    if (event.key === 'forum_posts') {
-                        const query = document.getElementById('postSearchInput') ? document.getElementById('postSearchInput').value.toLowerCase().trim() : '';
-                        renderPosts(query);
-                    }
-                }
-            });
         });
 
         function renderCommunities() {
             const grid = document.getElementById('communitiesGrid');
+            if (!grid) return;
             grid.innerHTML = communitiesData.map(comm => `
                 <div class="community-card">
                     <h3>${escapeHtml(comm.name)}</h3>
@@ -284,6 +247,7 @@
 
         function populateCommunitySelect() {
             const select = document.getElementById('post-community');
+            if (!select) return;
             select.innerHTML = communitiesData.map(comm => `
                 <option value="${comm.name}">${comm.name}</option>
             `).join('');
@@ -322,18 +286,6 @@
             const newUsername = document.getElementById('usernameInput').value.trim();
             const newDisplayName = document.getElementById('displayNameInput').value.trim();
             const fileInput = document.getElementById('avatarFileInput');
-            const errorSpan = document.getElementById('usernameError');
-
-            let takenUsernames = JSON.parse(localStorage.getItem('forum_taken_usernames')) || ['admin', 'moderator', 'root'];
-            
-            if (newUsername !== currentUser.username && takenUsernames.includes(newUsername)) {
-                errorSpan.textContent = 'Этот юзернейм уже занят!';
-                return;
-            }
-
-            takenUsernames = takenUsernames.filter(u => u !== currentUser.username);
-            takenUsernames.push(newUsername);
-            localStorage.setItem('forum_taken_usernames', JSON.stringify(takenUsernames));
 
             const saveUserData = (avatarUrl) => {
                 currentUser = {
@@ -344,7 +296,6 @@
                 localStorage.setItem('forum_user', JSON.stringify(currentUser));
                 updateProfileUI();
                 closeProfileModal();
-                renderPosts();
             };
 
             if (fileInput.files && fileInput.files[0]) {
@@ -374,85 +325,6 @@
         function openModal() { document.getElementById('postModal').style.display = 'flex'; }
         function closeModal() { document.getElementById('postModal').style.display = 'none'; }
 
-        function renderPosts(searchQuery = '') {
-            const postsFeed = document.getElementById('postsFeed');
-            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
-
-            const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-            const now = Date.now();
-            
-            const validPosts = posts.filter(post => {
-                if (!post.timestamp) return true;
-                return (now - post.timestamp) < thirtyDaysMs;
-            });
-
-            if (validPosts.length !== posts.length) {
-                posts = validPosts;
-                localStorage.setItem('forum_posts', JSON.stringify(posts));
-            }
-
-            if (searchQuery) {
-                posts = posts.filter(post => 
-                    post.title.toLowerCase().includes(searchQuery) || 
-                    post.text.toLowerCase().includes(searchQuery) ||
-                    post.authorName.toLowerCase().includes(searchQuery) ||
-                    post.authorUsername.toLowerCase().includes(searchQuery) ||
-                    post.community.toLowerCase().includes(searchQuery)
-                );
-            }
-
-            if (posts.length === 0) {
-                postsFeed.innerHTML = '<p class="no-posts" style="color: #777; grid-column: span 2; text-align: center;">Ничего не найдено</p>';
-                return;
-            }
-
-            postsFeed.innerHTML = posts.map(post => {
-                const isMyPost = post.authorUsername === currentUser.username;
-
-                return `
-                    <article class="post-card" data-id="${post.id}">
-                        <div class="post-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <img src="${post.authorAvatar}" alt="Avatar" class="avatar">
-                                <div>
-                                    <h4 class="post-author">${escapeHtml(post.authorName)} <span class="username-tag">@${escapeHtml(post.authorUsername)}</span></h4>
-                                    <span class="post-time">${post.time} · ${post.community}</span>
-                                </div>
-                            </div>
-                            ${isMyPost ? `<button type="button" onclick="deletePost('${post.id}')" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 14px;" title="Удалить пост">🗑️ Удалить</button>` : ''}
-                        </div>
-                        <h3 class="post-title">${escapeHtml(post.title)}</h3>
-                        <div class="post-content" id="content_${post.id}">
-                            <p>${escapeHtml(post.text)}</p>
-                        </div>
-                        <button type="button" class="toggle-text-btn" id="btn_${post.id}" onclick="togglePostText('${post.id}')" style="display: none;">Развернуть</button>
-                        <div class="post-footer">
-                            <button type="button" class="action-btn like-btn ${post.isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
-                                <img src="likeicon.png" alt="Like" class="btn-icon">
-                                <span class="like-count">${post.likes}</span>
-                            </button>
-                            <button type="button" class="action-btn comment-btn" onclick="openComments('${post.id}')">
-                                <img src="chat.png" alt="Comments" class="btn-icon">
-                                <span class="comment-count">${post.comments.length} ${getCommentWord(post.comments.length)}</span>
-                            </button>
-                        </div>
-                    </article>
-                `;
-            }).join('');
-
-            setTimeout(() => {
-                posts.forEach(post => {
-                    const contentDiv = document.getElementById(`content_${post.id}`);
-                    const btn = document.getElementById(`btn_${post.id}`);
-                    if (contentDiv && btn) {
-                        if (contentDiv.scrollHeight > 120) {
-                            btn.style.display = 'inline-block';
-                        }
-                    }
-                });
-            }, 0);
-        }
-
         function togglePostText(postId) {
             const contentDiv = document.getElementById(`content_${postId}`);
             const btn = document.getElementById(`btn_${postId}`);
@@ -466,135 +338,123 @@
             }
         }
 
-        function deletePost(postId) {
-            if (!confirm('Вы уверены, что хотите удалить этот пост?')) return;
-            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
-            posts = posts.filter(post => post.id !== postId);
-            localStorage.setItem('forum_posts', JSON.stringify(posts));
-            const query = document.getElementById('postSearchInput').value.toLowerCase().trim();
-            renderPosts(query);
-        }
-
-        function handleCreatePost(event) {
-            event.preventDefault();
-            const titleInput = document.getElementById('post-title');
-            const communitySelect = document.getElementById('post-community');
-            const textInput = document.getElementById('post-text');
-
-            if (!titleInput || !textInput) return;
-
-            const newPost = {
-                id: 'post_' + Date.now(),
-                authorName: currentUser.displayName,
-                authorUsername: currentUser.username,
-                authorAvatar: currentUser.avatar,
-                community: communitySelect.value,
-                title: titleInput.value,
-                text: textInput.value,
-                time: 'Только что',
-                timestamp: Date.now(),
-                likes: 0,
-                isLiked: false,
-                comments: []
-            };
-
-            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
-            posts.unshift(newPost);
-            localStorage.setItem('forum_posts', JSON.stringify(posts));
-
-            document.getElementById('createPostForm').reset();
-            closeModal();
-            
-            const searchInput = document.getElementById('postSearchInput');
-            if (searchInput) searchInput.value = '';
-            renderPosts();
-            switchTab('home-page', document.querySelector('.nav-item'));
-        }
-
-        function toggleLike(postId) {
-            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
-            posts = posts.map(post => {
-                if (post.id === postId) {
-                    if (post.isLiked) {
-                        post.likes -= 1;
-                        post.isLiked = false;
-                    } else {
-                        post.likes += 1;
-                        post.isLiked = true;
-                    }
-                }
-                return post;
-            });
-            localStorage.setItem('forum_posts', JSON.stringify(posts));
-            const query = document.getElementById('postSearchInput').value.toLowerCase().trim();
-            renderPosts(query);
-        }
-
-        function openComments(postId) {
-            currentPostId = postId;
-            document.getElementById('commentsModal').style.display = 'flex';
-            renderComments();
-        }
-
-        function closeCommentsModal() {
-            document.getElementById('commentsModal').style.display = 'none';
-            currentPostId = null;
-        }
-
-        function renderComments() {
-            if (!currentPostId) return;
-            const posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
-            const post = posts.find(p => p.id === currentPostId);
-            const commentsList = document.getElementById('commentsList');
-
-            if (!post || post.comments.length === 0) {
-                commentsList.innerHTML = '<p class="no-comments">Пока нет комментариев. Будьте первыми!</p>';
-                return;
-            }
-
-            commentsList.innerHTML = post.comments.map(c => `
-                <div class="comment-item">
-                    <strong>${escapeHtml(c.author)}</strong>
-                    <p>${escapeHtml(c.text)}</p>
-                </div>
-            `).join('');
-        }
-
-        function handleAddComment(event) {
-            event.preventDefault();
-            if (!currentPostId) return;
-
-            const input = document.getElementById('commentInput');
-            const text = input.value.trim();
-            if (!text) return;
-
-            let posts = JSON.parse(localStorage.getItem('forum_posts')) || [];
-            posts = posts.map(post => {
-                if (post.id === currentPostId) {
-                    post.comments.push({
-                        author: currentUser.displayName + ' (@' + currentUser.username + ')',
-                        text: text
-                    });
-                }
-                return post;
-            });
-
-            localStorage.setItem('forum_posts', JSON.stringify(posts));
-            input.value = '';
-            renderComments();
-            const query = document.getElementById('postSearchInput').value.toLowerCase().trim();
-            renderPosts(query);
-        }
-
-        function getCommentWord(num) {
-            if (num % 10 === 1 && num % 100 !== 11) return 'комментарий';
-            if ([2, 3, 4].includes(num % 10) && ![12, 13, 14].includes(num % 100)) return 'комментария';
-            return 'комментариев';
-        }
-
         function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
+    </script>
+
+    <!-- Модуль Firebase: общая база данных для всех пользователей в реальном времени -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyB1g0y9TXLhKgV_0jB3SRAKCDIV8c7whJo",
+        authDomain: "dimcheva-govno.firebaseapp.com",
+        projectId: "dimcheva-govno",
+        storageBucket: "dimcheva-govno.firebasestorage.app",
+        messagingSenderId: "770321971983",
+        appId: "1:770321971983:web:a7ff74791172db9e871c7a",
+        measurementId: "G-BEB1SQJF06"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      // 1. Создание поста и отправка в общую базу данных
+      window.handleCreatePost = async function(event) {
+          event.preventDefault();
+
+          const titleInput = document.getElementById('post-title');
+          const communitySelect = document.getElementById('post-community');
+          const textInput = document.getElementById('post-text');
+
+          if (!titleInput || !textInput) return;
+
+          try {
+              await addDoc(collection(db, "posts"), {
+                  authorName: currentUser.displayName,
+                  authorUsername: currentUser.username,
+                  authorAvatar: currentUser.avatar,
+                  community: communitySelect.value,
+                  title: titleInput.value,
+                  text: textInput.value,
+                  createdAt: Date.now()
+              });
+
+              document.getElementById('createPostForm').reset();
+              closeModal();
+              switchTab('home-page', document.querySelector('.nav-item'));
+          } catch (error) {
+              console.error("Ошибка при добавлении поста: ", error);
+              alert("Не удалось сохранить пост в базу данных.");
+          }
+      };
+
+      // 2. Функция удаления поста из базы данных
+      window.deletePost = async function(postId) {
+          if (!confirm('Вы уверены, что хотите удалить этот пост?')) return;
+          try {
+              await deleteDoc(doc(db, "posts", postId));
+          } catch (error) {
+              console.error("Ошибка при удалении поста: ", error);
+          }
+      };
+
+      // 3. Автоматическое получение и вывод постов для ВСЕХ пользователей в реальном времени
+      const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+
+      onSnapshot(postsQuery, (snapshot) => {
+          const postsFeed = document.getElementById('postsFeed');
+          if (!postsFeed) return;
+
+          postsFeed.innerHTML = '';
+
+          if (snapshot.empty) {
+              postsFeed.innerHTML = '<p class="no-posts" style="color: #777; grid-column: span 2; text-align: center;">Пока нет публикаций. Будьте первыми!</p>';
+              return;
+          }
+
+          snapshot.forEach((docSnapshot) => {
+              const post = docSnapshot.data();
+              const postId = docSnapshot.id;
+              const isMyPost = post.authorUsername === currentUser.username;
+
+              const postElement = document.createElement('article');
+              postElement.className = 'post-card';
+              postElement.setAttribute('data-id', postId);
+
+              postElement.innerHTML = `
+                  <div class="post-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                      <div style="display: flex; gap: 10px; align-items: center;">
+                          <img src="${post.authorAvatar || 'https://i.pravatar.cc/100?img=68'}" alt="Avatar" class="avatar" style="width: 40px; height: 40px; border-radius: 50%;">
+                          <div>
+                              <h4 class="post-author">${escapeHtml(post.authorName)} <span class="username-tag">@${escapeHtml(post.authorUsername)}</span></h4>
+                              <span class="post-time">${new Date(post.createdAt).toLocaleString()} · ${escapeHtml(post.community)}</span>
+                          </div>
+                      </div>
+                      ${isMyPost ? `<button type="button" onclick="deletePost('${postId}')" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 14px;" title="Удалить пост">🗑️ Удалить</button>` : ''}
+                  </div>
+                  <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                  <div class="post-content" id="content_${postId}">
+                      <p>${escapeHtml(post.text)}</p>
+                  </div>
+                  <button type="button" class="toggle-text-btn" id="btn_${postId}" onclick="togglePostText('${postId}')" style="display: none;">Развернуть</button>
+              `;
+
+              postsFeed.appendChild(postElement);
+
+              // Проверка высоты текста для кнопки «Развернуть»
+              setTimeout(() => {
+                  const contentDiv = document.getElementById(`content_${postId}`);
+                  const btn = document.getElementById(`btn_${postId}`);
+                  if (contentDiv && btn && contentDiv.scrollHeight > 120) {
+                      btn.style.display = 'inline-block';
+                  }
+              }, 0);
+          });
+      });
     </script>
 </body>
 </html>

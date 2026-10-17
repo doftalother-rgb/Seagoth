@@ -79,30 +79,26 @@ function escapeHtml(str) {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-(async function() {
-    await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
-    const { getFirestore, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+window.handleCreatePost = async function(event) {
+    event.preventDefault(); 
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyB1g0y9TXLhKgV_0jB3SRAKCDIV8c7whJo",
-      authDomain: "dimcheva-govno.firebaseapp.com",
-      projectId: "dimcheva-govno",
-      storageBucket: "dimcheva-govno.firebasestorage.app",
-      messagingSenderId: "770321971983",
-      appId: "1:770321971983:web:a7ff74791172db9e871c7a",
-      measurementId: "G-BEB1SQJF06"
+    const title = document.getElementById('post-title').value;
+    const community = document.getElementById('post-community').value;
+    const text = document.getElementById('post-text').value;
+
+    const newPost = {
+        title: title,
+        community: community,
+        text: text,
+        author: "Аноним", 
+        createdAt: Date.now()
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    await window.savePostToFirebase(newPost);
 
-    window.saveData = async function(dataObject) {
-        try {
-            const docRef = await addDoc(collection(db, "posts"), dataObject);
-            console.log("Сохранено с ID: ", docRef.id);
-        } catch (e) {
-            console.error("Ошибка записи: ", e);
-        }
-    };
-})();
+    document.getElementById('createPostForm').reset();
+
+    if (typeof closeModal === 'function') {
+        closeModal();
+    }
+};
