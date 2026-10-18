@@ -538,3 +538,18 @@ input[type="file"]::file-selector-button:hover {
 .toggle-text-btn:hover {
     text-decoration: underline;
 } 
+
+.posts-feed {
+    align-items: start;
+}
+
+.post-content {
+    max-height: 100px;
+    overflow: hidden;
+    position: relative;
+    transition: max-height 0.3s ease;
+}
+
+.post-content.expanded {
+    max-height: none;
+}

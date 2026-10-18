@@ -102,3 +102,19 @@ window.handleCreatePost = async function(event) {
         closeModal();
     }
 };
+
+setTimeout(() => {
+    posts.forEach(post => {
+        const contentDiv = document.getElementById(`content_${post.id}`);
+        const btn = document.getElementById(`btn_${post.id}`);
+        
+        if (contentDiv && btn) {
+            if (contentDiv.scrollHeight > 105) { 
+                btn.style.display = 'inline-block'; 
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+    });
+}, 50);
+

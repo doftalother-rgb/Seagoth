@@ -43,7 +43,6 @@
     <main class="content-container">
         <section id="home-page" class="page-section active">
             <h2>Лента публикаций</h2>
-            <!-- Сюда в реальном времени подгружаются посты из Firebase -->
             <div class="posts-feed" id="postsFeed"></div>
         </section>
 
@@ -64,7 +63,6 @@
         </div>
     </footer>
 
-    <!-- Модальное окно создания поста -->
     <div id="postModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -89,7 +87,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно профиля -->
     <div id="profileModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -115,7 +112,6 @@
         </div>
     </div>
 
-    <!-- Обычный скрипт интерфейса сайта -->
     <script>
         const communitiesData = [
             { id: "c/zomboid", name: "c/zomboid", desc: "Выживание в суровом мире Project Zomboid, моды и советы.", members: "15.4k" },
@@ -344,7 +340,6 @@
         }
     </script>
 
-    <!-- Модуль Firebase: общая база данных для всех пользователей в реальном времени -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
       import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -362,7 +357,6 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
-      // 1. Создание поста и отправка в общую базу данных
       window.handleCreatePost = async function(event) {
           event.preventDefault();
 
@@ -392,7 +386,6 @@
           }
       };
 
-      // 2. Функция удаления поста из базы данных
       window.deletePost = async function(postId) {
           if (!confirm('Вы уверены, что хотите удалить этот пост?')) return;
           try {
@@ -402,7 +395,6 @@
           }
       };
 
-      // 3. Автоматическое получение и вывод постов для ВСЕХ пользователей в реальном времени
       const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
 
       onSnapshot(postsQuery, (snapshot) => {
@@ -445,7 +437,6 @@
 
               postsFeed.appendChild(postElement);
 
-              // Проверка высоты текста для кнопки «Развернуть»
               setTimeout(() => {
                   const contentDiv = document.getElementById(`content_${postId}`);
                   const btn = document.getElementById(`btn_${postId}`);
